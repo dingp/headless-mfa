@@ -1,0 +1,6 @@
+node_modules/
+.browsers/
+.state/
+dist/
+*.cookie-jar
+*.cookies.txt

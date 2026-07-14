@@ -1,0 +1,30 @@
+{
+  "name": "headless-mfa",
+  "version": "0.1.0",
+  "description": "Refresh short-lived web credentials from a manually established browser SSO session",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dingp/headless-mfa.git"
+  },
+  "homepage": "https://github.com/dingp/headless-mfa#readme",
+  "bugs": {
+    "url": "https://github.com/dingp/headless-mfa/issues"
+  },
+  "type": "module",
+  "bin": {
+    "headless-mfa": "./headless-mfa"
+  },
+  "scripts": {
+    "browser:install": "PLAYWRIGHT_BROWSERS_PATH=.browsers playwright install chromium",
+    "check": "node --check src/cli.mjs && node --check src/lib.mjs",
+    "pack:source": "./scripts/package-source.sh",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "playwright": "1.61.1"
+  },
+  "private": true
+}
