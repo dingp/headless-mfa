@@ -257,3 +257,20 @@ in backups with broad access, or expose it through a TCP service on a multi-user
 node.
 
 Use `./headless-mfa help` for the complete option list.
+
+## Test and release automation
+
+GitHub Actions runs syntax checks and the test suite on Node.js 20, 22, and 24
+for pushes to `main` and pull requests targeting `main`.
+
+To publish a release, update the `version` in `package.json`, commit the
+change, and push a matching annotated or lightweight tag:
+
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The release workflow requires the tag to match the package version, reruns the
+checks, builds the source archive, verifies its SHA-256 checksum, and attaches
+both the `.tar.gz` archive and its `.sha256` file to a GitHub release.
