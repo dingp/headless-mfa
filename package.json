@@ -1,6 +1,6 @@
 {
   "name": "headless-mfa",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Refresh short-lived web credentials from a manually established browser SSO session",
   "repository": {
     "type": "git",
