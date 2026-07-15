@@ -58,6 +58,8 @@ Token options:
 Refresh options:
   --clear-cookie NAME   Short-lived cookie to clear; repeat as needed
                         (default: ${DEFAULT_REFRESH_COOKIES.join(', ')})
+  --clear-storage NAME  Browser localStorage key to clear; repeat as needed
+                        (useful for SSO-backed browser tokens)
 
 Fetch options:
   --method METHOD       HTTP method (default: GET)
@@ -83,7 +85,7 @@ function parseArguments(argv) {
   if (!COMMANDS.has(command)) throw new CliError(`Unknown command: ${command}\n\n${HELP}`);
 
   const booleanOptions = new Set(['headful', 'show-secrets']);
-  const repeatableOptions = new Set(['header', 'clear-cookie']);
+  const repeatableOptions = new Set(['header', 'clear-cookie', 'clear-storage']);
   const allowedOptions = {
     login: new Set(['url', 'state-dir', 'timeout', 'login-url']),
     token: new Set(['url', 'state-dir', 'timeout', 'headful', 'format', 'name', 'output']),
@@ -96,12 +98,13 @@ function parseArguments(argv) {
       'name',
       'output',
       'clear-cookie',
+      'clear-storage',
     ]),
     fetch: new Set(['url', 'state-dir', 'timeout', 'headful', 'method', 'header', 'data', 'output']),
     inspect: new Set(['url', 'state-dir', 'timeout', 'headful', 'show-secrets']),
     help: new Set(),
   };
-  const options = { header: [], 'clear-cookie': [] };
+  const options = { header: [], 'clear-cookie': [], 'clear-storage': [] };
   const positional = [];
 
   for (let index = 1; index < argv.length; index += 1) {
@@ -343,17 +346,36 @@ async function clearShortSession(context, config, names) {
   );
 }
 
+async function clearBrowserStorageForNavigation(context, page, config, names) {
+  const marker = `headless-mfa-storage-cleared-${process.pid}-${Date.now()}`;
+  await context.addInitScript(
+    ({ origin, names: storageNames, marker: clearMarker }) => {
+      if (window.location.origin !== origin || window.sessionStorage.getItem(clearMarker)) return;
+      for (const name of storageNames) window.localStorage.removeItem(name);
+      window.sessionStorage.setItem(clearMarker, '1');
+    },
+    { origin: config.target.origin, names, marker },
+  );
+  await page.goto(config.target.href, { waitUntil: 'domcontentloaded', timeout: config.timeout });
+  log(`Cleared browser-storage key(s): ${names.join(', ')}`);
+}
+
 async function runToken(config, options, forceRefresh = false) {
   const format = options.format ?? 'header';
   return withBrowser(config, !config.headful, async (context) => {
+    const page = context.pages()[0] ?? (await context.newPage());
     if (forceRefresh) {
-      const names = options['clear-cookie'].length
+      const cookieNames = options['clear-cookie'].length
         ? options['clear-cookie']
-        : DEFAULT_REFRESH_COOKIES;
-      await clearShortSession(context, config, names);
+        : options['clear-storage'].length
+          ? []
+          : DEFAULT_REFRESH_COOKIES;
+      if (cookieNames.length > 0) await clearShortSession(context, config, cookieNames);
+      if (options['clear-storage'].length > 0) {
+        await clearBrowserStorageForNavigation(context, page, config, options['clear-storage']);
+      }
     }
     const authorization = attachAuthorizationCapture(context, config.target);
-    const page = context.pages()[0] ?? (await context.newPage());
     await navigateToTarget(page, config.target, config.timeout);
     await page.waitForTimeout(500);
     const bundle = await collectCredentials(context, page, config.target, authorization);

@@ -143,6 +143,26 @@ By default, `refresh` clears `grafana_session` and
 The output file is written with mode `0600`. When the 24-hour SSO session has
 expired, the command exits with status `2`; run `login` and complete MFA again.
 
+Some SSO-backed sites keep their short-lived credential in browser storage
+instead of a cookie. Clear the site-specific `localStorage` key during refresh,
+then export the replacement credential. For Iris, the key is
+`graphcool-auth-token`:
+
+```bash
+./headless-mfa refresh \
+  --url https://iris.nersc.gov \
+  --clear-storage graphcool-auth-token \
+  --name graphcool-auth-token \
+  --format value \
+  --output .state/iris-session
+```
+
+`--clear-storage` removes only the named key on the configured origin. When it
+is used without `--clear-cookie`, the refresh does not clear the default
+Grafana cookies. The browser runs headlessly by default and follows the
+normal SSO redirect using the saved browser session. If that SSO session has
+expired, complete `login` again.
+
 To export all request headers instead:
 
 ```bash
