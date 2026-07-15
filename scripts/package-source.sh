@@ -9,8 +9,7 @@ archive="$root/dist/$name.tar.gz"
 
 mkdir -p "$root/dist"
 stage_root=$(mktemp -d "${TMPDIR:-/tmp}/headless-mfa-package.XXXXXX")
-trap 'rm -rf "$stage_root"' EXIT HUP INT TERM
-
+trap 'test -n "$stage_root" && test -d "$stage_root" && rm -rf "$stage_root"' EXIT HUP INT TERM
 mkdir -p "$stage_root/$name"
 
 tar \
