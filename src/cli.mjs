@@ -356,7 +356,7 @@ async function clearBrowserStorageForNavigation(context, page, config, names) {
     },
     { origin: config.target.origin, names, marker },
   );
-  await page.goto(config.target.href, { waitUntil: 'domcontentloaded', timeout: config.timeout });
+  await navigateToTarget(page, config.target, config.timeout);
   log(`Cleared browser-storage key(s): ${names.join(', ')}`);
 }
 
